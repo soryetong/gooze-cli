@@ -1,0 +1,15 @@
+# 定义请求结构体
+type UserInfoReq {
+    UserId int64 `json:"userId" form:"userId" binding:"required" description:"用户Id"` // 用户Id
+}
+
+# 定义响应结构体
+type UserInfoResp {
+    Name string `json:"name"`
+    Age int32 `json:"age"`
+}
+
+# 定义服务模块
+service User Group Public {
+    get info (UserInfoReq) returns (UserInfoResp)
+}
