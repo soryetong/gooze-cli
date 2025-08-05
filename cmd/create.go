@@ -306,7 +306,7 @@ var createCmd = &cobra.Command{
 			}
 		}
 
-		if startTarget != "" {
+		if startTarget != "" && startTarget != "No" {
 			logInfo("🚀  项目已启动")
 			if err := runCommandInDir(projectName,
 				"go", "run", "./"+filepath.Join("cmd", startTarget, "main.go"),

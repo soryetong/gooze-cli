@@ -1,3 +1,27 @@
+# 前言
+
+**如果你是第一次使用，请先查看文档 [看这里](https://soryetong.github.io/gooze-docs/)**
+
+# 如何使用？
+
+1. 启动项目
+
+   在 `build/scripts` 目录下有一个 `start_*.sh` 脚本，它就是用来启动项目的。
+
+    ```bash
+    sh ./build/scripts/start_*.sh # 记得修改脚本名称
+    ```
+
+
+2. 代码生成
+
+   在 `build/scripts` 目录下有一个 `gen_*.sh` 脚本，它就是用来生成代码的。
+
+    ```bash
+    sh ./build/scripts/gen_*.sh # 记得修改脚本名称
+    ```
+
+
 # 目录结构说明
 
 ```
