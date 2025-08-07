@@ -59,8 +59,8 @@ var createCmd = &cobra.Command{
 					survey.Required,
 					func(ans interface{}) error {
 						name, _ := ans.(string)
-						if containsChinese(name) {
-							return fmt.Errorf("项目名称不能包含中文字符")
+						if str := firstIllegalChar(name); str != "" {
+							return fmt.Errorf(fmt.Sprintf("项目名称不能包含中文字符或特殊字符：%s", str))
 						}
 
 						// 检查项目目录是否存在
@@ -97,9 +97,17 @@ var createCmd = &cobra.Command{
 						survey.Required,
 						func(ans interface{}) error {
 							name, _ := ans.(string)
-							if containsChinese(name) {
-								return fmt.Errorf("项目名称不能包含中文字符")
+							nameArr := strings.Split(name, "-")
+							if len(nameArr) < 1 {
+								return fmt.Errorf("子目录名称格式错误，请使用中横线-分割")
 							}
+
+							for _, s := range nameArr {
+								if str := firstIllegalChar(s); str != "" {
+									return fmt.Errorf(fmt.Sprintf("子目录名称不能包含中文字符或特殊字符：%s", str))
+								}
+							}
+
 							return nil
 						},
 					),
@@ -112,6 +120,7 @@ var createCmd = &cobra.Command{
 		}
 
 		// 创建项目目录
+		projectName = strings.TrimSpace(projectName)
 		if err := os.MkdirAll(projectName, 0755); err != nil {
 			logFatalf("创建目录失败...")
 		}
@@ -371,7 +380,7 @@ func handlerMain(target, projectName, moduleName string) (string, string) {
 		env = ".env"
 	}
 	configPath := filepath.Join("configs", configName+".yaml")
-	mainPath := filepath.Join(strings.TrimLeft(target, projectName+"/"), "main.go")
+	mainPath := filepath.Join("cmd", moduleName, "main.go")
 	// 自动生成代码
 	if err := runCommandInDir(projectName,
 		"go", "run", "./"+mainPath, "gen", "api",

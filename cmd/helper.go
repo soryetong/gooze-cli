@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"text/template"
 	"unicode"
 )
@@ -66,9 +67,60 @@ func logInfo(msg string) {
 	log.Printf(green + "[INFO] " + msg + "\n" + reset)
 }
 
+func firstIllegalChar(s string) string {
+	s = strings.TrimSpace(s)
+	for _, r := range s {
+		switch {
+		case unicode.Is(unicode.Han, r):
+			return string(r) // 汉字非法
+		case r >= 'a' && r <= 'z':
+			continue
+		case r >= 'A' && r <= 'Z':
+			continue
+		case r >= '0' && r <= '9':
+			continue
+		case r == '-' || r == '_':
+			continue
+		default:
+			return string(r) // 非法字符，如 emoji、标点
+		}
+	}
+	return "" // 全部合法
+}
+
+func isValidDirName(s string) bool {
+	for _, r := range s {
+		switch {
+		case unicode.Is(unicode.Han, r):
+			// 不允许汉字
+			return false
+		case r >= 'a' && r <= 'z':
+			continue
+		case r >= 'A' && r <= 'Z':
+			continue
+		case r >= '0' && r <= '9':
+			continue
+		case r == '-' || r == '_':
+			continue
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 func containsChinese(s string) bool {
 	for _, r := range s {
 		if unicode.Is(unicode.Han, r) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsSpecialChar(s string) bool {
+	for _, r := range s {
+		if !(unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.Is(unicode.Han, r)) {
 			return true
 		}
 	}
