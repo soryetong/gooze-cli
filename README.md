@@ -13,12 +13,21 @@
 
 ## 使用
 
+> 注意 注意 ⚠️
+> 
+> 由于目前没有发布 release 版本以及并未发布 tag ，务必使用以下命令安装
+> 
+> 待稳定后将会发布 release 版本
+
+
 ```bash
-go install github.com/soryetong/gooze-cli@latest
+go install github.com/soryetong/gooze-cli@main
+
+# @main 是重点，@latest 可能不是期望的最新提交
 ```
 
 
-然后，**进入你想存放的项目的目录中**，
+然后，**进入你想存放的项目的目录中**
 
 ### 命令 1：初始化一个 go 项目
 
