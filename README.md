@@ -1,6 +1,6 @@
 <h1 align="center">gooze-cli</h1>
 
-<p align="center"> 基于 gooze-starter 快速构建 Go 服务 </p>
+<p align="center"> 基于 gooze-starter 快速构建 Go 服务并提供 Go 开发的 CLI 工具 </p>
 
 <p align="center"> 🧠 旨在让 Go 服务的构建「更快、更清晰、更优雅」</p>
 
@@ -17,7 +17,10 @@
 go install github.com/soryetong/gooze-cli@latest
 ```
 
-然后，**进入你想存放的项目的目录中**，运行以下命令：
+
+然后，**进入你想存放的项目的目录中**，
+
+### 命令 1：初始化一个 go 项目
 
 ```bash
 gooze-cli init
@@ -27,11 +30,15 @@ gooze-cli init
 
 运行该命令后，会提示你输入项目名、项目类型等，按照提示输入即可
 
-![gooze-cli](./docs/images/step1.png)
+![gooze-cli](images/step1.png)
 
 运行完成后，会按照 Go 社区的项目最佳实践来生成一个优雅的 Go 项目结构，并生成相应的代码文件。
 
-## 注意 ⚠️
+### 命令 2：实现中......
+
+---
+
+## 命令 1 注意事项 ⚠️
 
 项目名称有以下要求：
 
@@ -98,8 +105,7 @@ my-project/
 │   │   └── bootstrap/        # 启动逻辑
 │   └── client/               # 客户端模块（结构同 admin）
 │
-├── pkg/                      # 可复用公共组件（非业务相关）
-│   ├── model/                # 通用数据库模型
+├── models/                   # 通用数据库模型
 │
 ├── static/                   # 静态资源
 │   ├── storage/              # 存放临时文件、用户上传文件、缓存等
@@ -124,8 +130,8 @@ my-project/
 │
 ├── build/                    # 构建相关脚本（如 Dockerfile、CI 脚本）
 │   ├── scripts/              # 启动/部署等辅助脚本（如 build.sh）
-│   │   └── gen.sh            # 代码生成脚本
-│   │   └── start.sh          # 项目启动脚本
+│   │   └── gen_server.sh     # 代码生成脚本
+│   │   └── start_server.sh   # 项目启动脚本
 │   └── docker/               # Dockerfile 或 compose 文件
 │
 ├── cmd/                      # 程序入口
@@ -146,8 +152,7 @@ my-project/
 │   ├── service/              # 业务逻辑
 │   └── bootstrap/            # 启动逻辑
 │
-├── pkg/                      # 可复用公共组件（非业务相关）
-│   ├── model/                # 通用数据库模型
+├── models/                   # 通用数据库模型
 │
 ├── static/                   # 静态资源
 │   ├── storage/              # 存放临时文件、用户上传文件、缓存等

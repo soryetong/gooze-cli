@@ -1,10 +1,12 @@
-package cmd
+package gooze_starter
 
 import (
 	"bytes"
 	"os/exec"
 	"path/filepath"
 	"text/template"
+
+	"github.com/soryetong/gooze-cli/pkg/util"
 )
 
 const mainContentTemplate = `
@@ -39,7 +41,7 @@ func genMain(targetPath, serverPath string) error {
 	}
 
 	filename := filepath.Join(targetPath, "main.go")
-	err = WriteFileWithDirs(filename, buf.Bytes())
+	err = util.WriteFileWithDirs(filename, buf.Bytes())
 	// err = os.WriteFile(filename, buf.Bytes(), 0644)
 	if err != nil {
 		return err

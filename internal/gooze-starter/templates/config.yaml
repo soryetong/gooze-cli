@@ -36,9 +36,9 @@ jwt:
   secretKey: 123456
   expire: 86400
 casbin:
-  modePath: ""
+  modePath: "./configs/rbac_model.conf"
   remark: 当你使用了多个数据库时，需要指定一个数据库名，只有一个时，可以忽略这个配置
-  dbName: mysql
+  dbName: master
 oss:
   type: local
   savePath: ./static/resource/

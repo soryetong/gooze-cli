@@ -1,31 +1,32 @@
 /*
 Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 */
-package cmd
+package gooze_starter
 
 import (
 	"embed"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strings"
 	"syscall"
+	"text/template"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
+	"github.com/soryetong/gooze-cli/pkg/util"
 	"github.com/spf13/cobra"
 )
 
 //go:embed templates/*
 var embeddedTemplates embed.FS
 
-// createCmd represents the create command
-var createCmd = &cobra.Command{
+// StartCmd represents the create command
+var StartCmd = &cobra.Command{
 	Use:   "init",
-	Short: "根据预设的模板创建一个新项目",
+	Short: "Generate New Project from Templates",
 	Long:  `此命令会引导您输入必要信息，然后根据 'templates' 目录下的蓝图生成一个完整的项目结构。`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// 监听 Ctrl+C 信号
@@ -34,13 +35,13 @@ var createCmd = &cobra.Command{
 
 		go func() {
 			_ = <-sigChan
-			log.Printf(yellow + "[WARN] 接收到退出信号，中止执行。" + reset)
+			util.LogWarn(" 接收到退出信号，中止执行。")
 			os.Exit(0)
 		}()
 
 		// 检查当前目录
 		if _, err := os.Getwd(); err != nil {
-			logFatalf("当前目录无效...")
+			util.LogFatalf("当前目录无效...")
 		}
 
 		// 获取用户输入
@@ -59,7 +60,7 @@ var createCmd = &cobra.Command{
 					survey.Required,
 					func(ans interface{}) error {
 						name, _ := ans.(string)
-						if str := firstIllegalChar(name); str != "" {
+						if str := util.FirstIllegalChar(name); str != "" {
 							return fmt.Errorf(fmt.Sprintf("项目名称不能包含中文字符或特殊字符：%s", str))
 						}
 
@@ -72,7 +73,7 @@ var createCmd = &cobra.Command{
 				),
 			),
 		); err == terminal.InterruptErr {
-			log.Printf(yellow + "[WARN] 接收到退出信号，中止执行。" + reset)
+			util.LogWarn(" 接收到退出信号，中止执行。")
 			return
 		}
 
@@ -82,7 +83,7 @@ var createCmd = &cobra.Command{
 			Default: "true",
 			Help:    "是指是否需要创建多个子目录，如 `admin`, `app` 这种多端 API 在同一个项目中",
 		}, &needManyDir); err == terminal.InterruptErr {
-			log.Printf(yellow + "[WARN] 接收到退出信号，中止执行。" + reset)
+			util.LogWarn(" 接收到退出信号，中止执行。")
 			return
 		}
 		isMulti = needManyDir == "true"
@@ -103,7 +104,7 @@ var createCmd = &cobra.Command{
 							}
 
 							for _, s := range nameArr {
-								if str := firstIllegalChar(s); str != "" {
+								if str := util.FirstIllegalChar(s); str != "" {
 									return fmt.Errorf(fmt.Sprintf("子目录名称不能包含中文字符或特殊字符：%s", str))
 								}
 							}
@@ -113,7 +114,7 @@ var createCmd = &cobra.Command{
 					),
 				),
 			); err == terminal.InterruptErr {
-				log.Printf(yellow + "[WARN] 接收到退出信号，中止执行。" + reset)
+				util.LogWarn(" 接收到退出信号，中止执行。")
 				return
 			}
 			subDirs = strings.Split(subDirInput, "-")
@@ -122,25 +123,25 @@ var createCmd = &cobra.Command{
 		// 创建项目目录
 		projectName = strings.TrimSpace(projectName)
 		if err := os.MkdirAll(projectName, 0755); err != nil {
-			logFatalf("创建目录失败...")
+			util.LogFatalf("创建目录失败...")
 		}
-		logInfo(fmt.Sprintf("已创建项目：%s", projectName))
+		util.LogInfo(fmt.Sprintf("已创建项目：%s", projectName))
 
 		var err error
 		if err = createEmptyDir(filepath.Join(projectName, "build", "scripts")); err != nil {
-			logFatalf("创建 build/scripts 目录失败...")
+			util.LogFatalf("创建 build/scripts 目录失败...")
 		}
 		if err = createEmptyDir(filepath.Join(projectName, "build", "docker")); err != nil {
-			logFatalf("创建 build/docker 目录失败...")
+			util.LogFatalf("创建 build/docker 目录失败...")
 		}
 		if err = createEmptyDir(filepath.Join(projectName, "test")); err != nil {
-			logFatalf("创建 test 目录失败...")
+			util.LogFatalf("创建 test 目录失败...")
 		}
-		if err = createEmptyDir(filepath.Join(projectName, "pkg", "models")); err != nil {
-			logFatalf("创建 pkg/model 目录失败...")
+		if err = createEmptyDir(filepath.Join(projectName, "models")); err != nil {
+			util.LogFatalf("创建 models 目录失败...")
 		}
 		if err = createEmptyDir(filepath.Join(projectName, "static", "storage")); err != nil {
-			logFatalf("创建 static/storage 目录失败...")
+			util.LogFatalf("创建 static/storage 目录失败...")
 		}
 
 		err = fs.WalkDir(embeddedTemplates, "templates", func(path string, d fs.DirEntry, err error) error {
@@ -160,13 +161,13 @@ var createCmd = &cobra.Command{
 					for _, dir := range subDirs {
 						targetPath := filepath.Join(projectName, "api", dir, baseName)
 						if err := writeFile(targetPath, data); err != nil {
-							logFatalf(fmt.Errorf("写入文件 %s 失败... %v", targetPath, err).Error())
+							util.LogFatalf(fmt.Errorf("写入文件 %s 失败... %v", targetPath, err).Error())
 						}
 					}
 				} else {
 					targetPath := filepath.Join(projectName, "api", baseName)
 					if err = writeFile(targetPath, data); err != nil {
-						logFatalf(fmt.Errorf("写入文件 %s 失败... %v", targetPath, err).Error())
+						util.LogFatalf(fmt.Errorf("写入文件 %s 失败... %v", targetPath, err).Error())
 					}
 				}
 			case "config.yaml":
@@ -175,13 +176,13 @@ var createCmd = &cobra.Command{
 						name := fmt.Sprintf("%s.yaml", dir)
 						targetPath := filepath.Join(projectName, "configs", name)
 						if err = writeFile(targetPath, data); err != nil {
-							logFatalf(fmt.Errorf("写入文件 %s 失败... %v", targetPath, err).Error())
+							util.LogFatalf(fmt.Errorf("写入文件 %s 失败... %v", targetPath, err).Error())
 						}
 					}
 				} else {
 					targetPath := filepath.Join(projectName, "configs", baseName)
 					if err = writeFile(targetPath, data); err != nil {
-						logFatalf(fmt.Errorf("写入文件 %s 失败... %v", targetPath, err).Error())
+						util.LogFatalf(fmt.Errorf("写入文件 %s 失败... %v", targetPath, err).Error())
 					}
 				}
 			case "env":
@@ -206,6 +207,8 @@ var createCmd = &cobra.Command{
 				}
 			case "gitignore":
 				err = writeFile(filepath.Join(projectName, ".gitignore"), data)
+			case "rbac_model.conf":
+				err = writeFile(filepath.Join(projectName, "configs", "rbac_model.conf"), data)
 			case "README1.md":
 				if !isMulti {
 					err = writeFile(filepath.Join(projectName, "README.md"), data)
@@ -266,20 +269,20 @@ var createCmd = &cobra.Command{
 		})
 
 		if err != nil {
-			logFatalf("复制模板失败...")
+			util.LogFatalf("复制模板失败...")
 		}
 
-		logInfo("基础目录结构创建完成")
+		util.LogInfo("基础目录结构创建完成")
 
 		// 执行 go mod init
-		if err := runCommandInDirNoOutput(projectName, "go", "mod", "init", projectName); err != nil {
-			logFatalf("执行 go mod init 失败...")
+		if err := util.RunCommandInDirNoOutput(projectName, "go", "mod", "init", projectName); err != nil {
+			util.LogFatalf("执行 go mod init 失败...")
 		}
-		logInfo("go mod 初始化完成")
+		util.LogInfo("go mod 初始化完成")
 
 		// 拉取依赖
-		if err := runCommandInDirNoOutput(projectName, "go", "get", "-u", "github.com/soryetong/gooze-starter"); err != nil {
-			logFatalf("拉取最新依赖失败...")
+		if err := util.RunCommandInDirNoOutput(projectName, "go", "get", "-u", "github.com/soryetong/gooze-starter"); err != nil {
+			util.LogFatalf("拉取最新依赖失败...")
 		}
 
 		if isMulti {
@@ -316,13 +319,13 @@ var createCmd = &cobra.Command{
 		}
 
 		if startTarget != "" && startTarget != "No" {
-			logInfo("🚀  项目已启动")
-			if err := runCommandInDir(projectName,
+			util.LogInfo("🚀  项目启动中......")
+			if err := util.RunCommandInDir(projectName,
 				"go", "run", "./"+filepath.Join("cmd", startTarget, "main.go"),
 				"--config=./configs/"+configName,
 				"--env="+envName,
 			); err != nil {
-				logFatalf("项目启动失败...")
+				util.LogFatalf("项目启动失败...")
 			}
 		}
 	},
@@ -348,30 +351,16 @@ func createEmptyDir(path string) error {
 	return os.WriteFile(filepath.Join(path, ".gitkeep"), []byte{}, 0644)
 }
 
-func init() {
-	rootCmd.AddCommand(createCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// createCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
 func handlerMain(target, projectName, moduleName string) (string, string) {
 	if err := genMain(target, ""); err != nil {
-		logFatalf(fmt.Errorf("生成主入口文件失败... %v", err).Error())
+		util.LogFatalf(fmt.Errorf("生成主入口文件失败... %v", err).Error())
 	}
 
-	if err := runCommandInDir(target, "go", "mod", "tidy"); err != nil {
-		logFatalf(fmt.Errorf("拉取最新依赖失败... %v", err).Error())
+	if err := util.RunCommandInDir(target, "go", "mod", "tidy"); err != nil {
+		util.LogFatalf(fmt.Errorf("拉取最新依赖失败... %v", err).Error())
 	}
 
-	logInfo(moduleName + "拉取 github.com/soryetong/gooze-starter 成功")
+	util.LogInfo(moduleName + "拉取 github.com/soryetong/gooze-starter 成功")
 
 	configName := moduleName
 	env := ".env." + moduleName
@@ -380,9 +369,13 @@ func handlerMain(target, projectName, moduleName string) (string, string) {
 		env = ".env"
 	}
 	configPath := filepath.Join("configs", configName+".yaml")
-	mainPath := filepath.Join("cmd", moduleName, "main.go")
+	cmdDir := moduleName
+	if cmdDir == "" {
+		cmdDir = "server"
+	}
+	mainPath := filepath.Join("cmd", cmdDir, "main.go")
 	// 自动生成代码
-	if err := runCommandInDir(projectName,
+	if err := util.RunCommandInDir(projectName,
 		"go", "run", "./"+mainPath, "gen", "api",
 		"--config=./"+configPath,
 		"--env="+env,
@@ -390,7 +383,7 @@ func handlerMain(target, projectName, moduleName string) (string, string) {
 		"--output=./internal",
 		"--log=false",
 	); err != nil {
-		logFatalf("自动生成代码失败...")
+		util.LogFatalf("自动生成代码失败...")
 	}
 
 	// 修改 主入口 文件
@@ -399,11 +392,31 @@ func handlerMain(target, projectName, moduleName string) (string, string) {
 		serverPath = fmt.Sprintf("%s/internal/%s/bootstrap", projectName, moduleName)
 	}
 	if err := genMain(target, serverPath); err != nil {
-		logFatalf("更新主入口文件失败...")
+		util.LogFatalf("更新主入口文件失败...")
 	}
-	if err := runCommandInDirNoOutput(projectName, "go", "mod", "tidy"); err != nil {
-		logFatalf("拉取最新依赖失败...")
+	if err := util.RunCommandInDirNoOutput(projectName, "go", "mod", "tidy"); err != nil {
+		util.LogFatalf("拉取最新依赖失败...")
 	}
 
 	return mainPath, configPath
+}
+
+func renderTemplateFile(srcPath, destPath string, data map[string]string) error {
+	content, err := embeddedTemplates.ReadFile(srcPath)
+	if err != nil {
+		return err
+	}
+	tmpl, err := template.New(filepath.Base(srcPath)).Parse(string(content))
+	if err != nil {
+		return err
+	}
+	if err = os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+		return err
+	}
+	outFile, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+	return tmpl.Execute(outFile, data)
 }

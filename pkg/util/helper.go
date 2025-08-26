@@ -1,4 +1,4 @@
-package cmd
+package util
 
 import (
 	"fmt"
@@ -8,32 +8,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"text/template"
 	"unicode"
 )
 
-func renderTemplateFile(srcPath, destPath string, data map[string]string) error {
-	content, err := embeddedTemplates.ReadFile(srcPath)
-	if err != nil {
-		return err
-	}
-	tmpl, err := template.New(filepath.Base(srcPath)).Parse(string(content))
-	if err != nil {
-		return err
-	}
-	if err = os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-		return err
-	}
-	outFile, err := os.Create(destPath)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-	return tmpl.Execute(outFile, data)
-}
-
 // 通用执行器
-func runCommandInDir(dir string, name string, args ...string) error {
+func RunCommandInDir(dir string, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
@@ -42,7 +21,7 @@ func runCommandInDir(dir string, name string, args ...string) error {
 	return cmd.Run()
 }
 
-func runCommandInDirNoOutput(dir string, name string, args ...string) error {
+func RunCommandInDirNoOutput(dir string, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Dir = dir
 	cmd.Stdout = io.Discard
@@ -59,15 +38,19 @@ const (
 	reset  = "\033[0m"
 )
 
-func logFatalf(msg string) {
+func LogFatalf(msg string) {
 	log.Fatalf(red + "[ERROR] " + msg + "\n" + reset)
 }
 
-func logInfo(msg string) {
+func LogInfo(msg string) {
 	log.Printf(green + "[INFO] " + msg + "\n" + reset)
 }
 
-func firstIllegalChar(s string) string {
+func LogWarn(msg string) {
+	log.Printf(yellow + "[WARN] " + msg + "\n" + reset)
+}
+
+func FirstIllegalChar(s string) string {
 	s = strings.TrimSpace(s)
 	for _, r := range s {
 		switch {
@@ -141,4 +124,13 @@ func WriteFileWithDirs(path string, data []byte) error {
 	}
 
 	return nil
+}
+
+func InArray[T comparable](val T, slice []T) bool {
+	for _, item := range slice {
+		if item == val {
+			return true
+		}
+	}
+	return false
 }

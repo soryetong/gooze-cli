@@ -21,6 +21,8 @@
     sh ./build/scripts/gen_*.sh # 记得修改脚本名称
     ```
 
+3. 要使用 `databases`、`mongo`、`redis` 等，请记得先修改 `configs/*.yaml` 文件中的地址，或者通过 `.env_*` 重写 yaml 的内容
+
 
 # 目录结构说明
 
@@ -46,6 +48,7 @@ my-project/
 │       └── main.go
 │
 ├── configs/                  # 应用级配置（YAML 格式）
+│   ├── rbac_model.conf       # Casbin 权限规则
 │   ├── admin.yaml            # admin 端配置文件
 │   └── client.yaml           # client 端配置文件
 │
